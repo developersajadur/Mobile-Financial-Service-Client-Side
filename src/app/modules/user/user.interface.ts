@@ -11,9 +11,11 @@ export type TUser = {
   balance: number;
   isVerified: boolean;
   role: 'user' | 'agent' | 'admin';
+  totalMoney?: number;
   isBlocked: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 };
+
 
 export type TUserRole = keyof typeof USER_ROLE;

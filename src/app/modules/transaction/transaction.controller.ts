@@ -20,6 +20,23 @@ const createDepositTransactionIntoDb = catchAsync(async (req, res) => {
   });
 });
 
+const createTransferTransactionIntoDb = catchAsync(async (req, res) => {
+  const decoded = tokenDecoder(req);
+  const { userId } = decoded;
+  req.body.user = userId;
+  const transaction = await transactionServices.createTransferTransactionIntoDb(
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Transfer Money successful',
+    data: transaction,
+  });
+});
+
 export const transactionController = {
     createDepositTransactionIntoDb,
+    createTransferTransactionIntoDb,
 };

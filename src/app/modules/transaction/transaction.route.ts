@@ -14,4 +14,11 @@ router.post(
   transactionController.createDepositTransactionIntoDb,
 );
 
+router.post(
+  '/make-transfer-transaction',
+  auth(USER_ROLE.user),
+  validateRequest(transactionValidationSchema.createTransactionValidation),
+  transactionController.createTransferTransactionIntoDb,
+);
+
 export const transactionRoute = router;

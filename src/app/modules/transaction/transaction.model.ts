@@ -8,28 +8,42 @@ const transactionSchema = new Schema<TTransaction>(
       ref: 'User',
       required: true,
     },
+
     type: {
       type: String,
       enum: ['deposit', 'withdraw', 'transfer'],
       required: true,
     },
+
     amount: {
       type: Number,
       required: true,
       min: [1, "Amount must be greater than zero"],
     },
+
+    recipientNumber: {
+      type: String, // Changed to String to handle leading zeros
+      required: function () {
+        return this.type === 'transfer'; // Only required for transfers
+      },
+      minlength: 10,
+      maxlength: 10,
+      match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
+    },
+
     recipient: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: function () {
-        return this.type === 'deposit';
+        return this.type === 'transfer'; // Required for transfers
       },
     },
+
     agentId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: function () {
-        return this.type === 'transfer' || this.type === 'withdraw';
+        return this.type === 'deposit' || this.type === 'withdraw'; // Required for deposit & withdraw
       },
     },
   },
