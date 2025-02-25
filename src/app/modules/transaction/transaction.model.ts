@@ -43,7 +43,7 @@ const transactionSchema = new Schema<TTransaction>(
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: function () {
-        return this.type === 'deposit' || this.type === 'withdraw'; // Required for deposit & withdraw
+        return this.type === 'withdraw'; // Required for deposit & withdraw
       },
     },
   },

@@ -6,6 +6,7 @@ export type TTransaction = {
   type: 'deposit' | 'withdraw' | 'transfer'; // Transaction type
   amount: number; // Transaction amount
   recipientNumber?: number;
+  totalMoney?: number
   recipient?: Types.ObjectId; // Required for transfers
   agentId?: Types.ObjectId; // Required for deposit and withdraw
   createdAt?: Date;

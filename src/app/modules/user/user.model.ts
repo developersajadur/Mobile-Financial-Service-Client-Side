@@ -40,6 +40,10 @@ const userSchema = new Schema<TUser>(
       default: 0,
       min: [0, "Balance cannot be negative"],
     },
+    totalMoney: {
+      type: Number,
+      
+    },
     isVerified: {
       type: Boolean,
       default: false,

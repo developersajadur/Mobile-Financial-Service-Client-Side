@@ -3,45 +3,62 @@ import { Transaction } from './transaction.model';
 import { User } from '../user/user.model';
 import AppError from '../../errors/AppError';
 import status from 'http-status';
+import mongoose from 'mongoose';
+
+
+
 
 const createDepositTransactionIntoDb = async (transaction: TTransaction) => {
-  const {  type, amount, recipient, user } = transaction;
+    const { type, amount, recipientNumber, user } = transaction;
 
-  const admin = await User.findOne({role: 'admin'});
-    if(!admin){
-        throw new AppError(status.FORBIDDEN, 'Admin not found');
+    const session = await mongoose.startSession(); // Start a session for transactions
+    session.startTransaction(); // Start the transaction
+
+    try {
+        const admin = await User.findOne({ role: 'admin' }).session(session);
+        if (!admin) throw new AppError(status.FORBIDDEN, 'Admin not found');
+
+        // Ensure admin.totalMoney is initialized to 0 if it's undefined
+        admin.totalMoney = admin.totalMoney || 0;
+
+        const userData = await User.findById(user).session(session);
+        const recipientData = await User.findOne({ phoneNumber: recipientNumber }).session(session);
+
+        if (!recipientData) throw new AppError(status.NOT_FOUND, 'Recipient not found');
+        if (!recipientData.isVerified) throw new AppError(status.FORBIDDEN, 'Recipient is not verified');
+        if (recipientData.isBlocked) throw new AppError(status.FORBIDDEN, 'Recipient is blocked');
+        if (recipientData.role !== 'user') throw new AppError(status.FORBIDDEN, 'This is not a user');
+        if (recipientData.phoneNumber === userData?.phoneNumber) throw new AppError(status.FORBIDDEN, 'You cannot deposit to yourself');
+
+        if (type !== 'deposit') throw new AppError(status.BAD_REQUEST, 'Invalid transaction type');
+
+        // Update balances
+        recipientData.balance += amount;
+        admin.totalMoney += amount; 
+
+        // Save user and recipient balances concurrently
+        await Promise.all([
+            recipientData.save({ session }),
+            admin.save({ session }), // Save admin's updated balance
+        ]);
+
+        // Create the transaction
+        const createdTransaction = await Transaction.create([{
+            ...transaction,
+            recipient: recipientData._id,
+        }], { session });
+
+        // Populate the user and recipient in the newly created transaction
+        const newTransaction = await createdTransaction[0].populate(['user', 'recipient']);
+
+        await session.commitTransaction();
+        return newTransaction; 
+    } catch (error) {
+        await session.abortTransaction();
+        throw error;
+    } finally {
+        session.endSession(); 
     }
-    admin.totalMoney = admin.totalMoney || 0;
-
-  const userData = await User.findById(user);
-  const recipientData = await User.findById(recipient);
-
-  if (!recipientData) {
-    throw new AppError(status.NOT_FOUND, 'Recipient not found');
-  } else if (!recipientData.isVerified) {
-    throw new AppError(status.FORBIDDEN, 'Recipient is not verified');
-  } else if (recipientData.isBlocked) {
-    throw new AppError(status.FORBIDDEN, 'Recipient is blocked');
-  } else if (recipientData.role !== 'user') {
-    throw new AppError(status.FORBIDDEN, 'This is not a user');
-  }else if(recipientData.phoneNumber === userData?.phoneNumber){
-    throw new AppError(status.FORBIDDEN, 'You cannot deposit to yourself');
-  }
-
-
-  if (type !== 'deposit') {
-    throw new AppError(status.BAD_REQUEST, 'Invalid transaction type');
-  }
-
-  recipientData.balance += amount;
-  admin.totalMoney += amount as number;
-  await recipientData.save();
-  await admin.save();
-
-  const newTransaction = (
-    await (await Transaction.create(transaction)).populate('user')
-  ).populate('recipient');
-  return newTransaction;
 };
 
 
@@ -50,63 +67,81 @@ const createDepositTransactionIntoDb = async (transaction: TTransaction) => {
 const createTransferTransactionIntoDb = async (transaction: TTransaction) => {
     const { type, amount, user, recipientNumber } = transaction;
 
-    // Find admin
-    const admin = await User.findOne({ role: 'admin' });
-    if (!admin) {
-        throw new AppError(status.FORBIDDEN, 'Admin not found');
-    }
-    admin.balance = admin.balance || 0; // Ensure admin balance exists
+    const session = await mongoose.startSession(); 
+    session.startTransaction(); // Start the transaction
 
-    // Validate transaction type
-    if (type !== 'transfer') {
-        throw new AppError(status.BAD_REQUEST, 'Invalid transaction type');
-    } else if (amount < 50) {
-        throw new AppError(status.BAD_REQUEST, 'Transfer amount must be greater than 50');
-    }
+    try {
+        // Find admin
+        const admin = await User.findOne({ role: 'admin' }).session(session);
+        if (!admin) {
+            throw new AppError(status.FORBIDDEN, 'Admin not found');
+        }
+        admin.balance = admin.balance || 0; // Ensure admin balance exists
 
-    // Find sender (user)
-    const userData = await User.findById(user);
-    if (!userData) {
-        throw new AppError(status.NOT_FOUND, 'User not found');
-    }
+        // Validate transaction type
+        if (type !== 'transfer') {
+            throw new AppError(status.BAD_REQUEST, 'Invalid transaction type');
+        } else if (amount < 50) {
+            throw new AppError(status.BAD_REQUEST, 'Transfer amount must be greater than 50');
+        }
 
-    // Find recipient (by phone number)
-    const recipientData = await User.findOne({ phoneNumber: recipientNumber });
-    if (!recipientData) {
-        throw new AppError(status.NOT_FOUND, 'Recipient not found');
-    } else if (!recipientData.isVerified) {
-        throw new AppError(status.FORBIDDEN, 'Recipient is not verified');
-    } else if (recipientData.isBlocked) {
-        throw new AppError(status.FORBIDDEN, 'Recipient is blocked');
-    } else if (recipientData.role !== 'user') {
-        throw new AppError(status.FORBIDDEN, 'This is not a user');
-    } else if (recipientData.phoneNumber === userData.phoneNumber) {
-        throw new AppError(status.FORBIDDEN, 'You cannot transfer to yourself');
-    }
+        // Find sender (user)
+        const userData = await User.findById(user).session(session);
+        if (!userData) {
+            throw new AppError(status.NOT_FOUND, 'User not found');
+        }
 
-    // Check sender's balance
-    const transferFee = amount >= 100 ? 5 : 0;
-    if (userData.balance < amount + transferFee) {
-        throw new AppError(status.BAD_REQUEST, 'Insufficient funds');
-    }
+        // Find recipient (by phone number)
+        const recipientData = await User.findOne({ phoneNumber: recipientNumber }).session(session);
+        if (!recipientData) {
+            throw new AppError(status.NOT_FOUND, 'Recipient not found');
+        } else if (!recipientData.isVerified) {
+            throw new AppError(status.FORBIDDEN, 'Recipient is not verified');
+        } else if (recipientData.isBlocked) {
+            throw new AppError(status.FORBIDDEN, 'Recipient is blocked');
+        } else if (recipientData.role !== 'user') {
+            throw new AppError(status.FORBIDDEN, 'This is not a user');
+        } else if (recipientData.phoneNumber === userData.phoneNumber) {
+            throw new AppError(status.FORBIDDEN, 'You cannot transfer to yourself');
+        }
 
-    // Perform balance update
-    userData.balance -= amount + transferFee;
-    recipientData.balance += amount;
-    admin.balance += transferFee;
+        // Check sender's balance
+        const transferFee = amount >= 100 ? 5 : 0;
+        if (userData.balance < amount + transferFee) {
+            throw new AppError(status.BAD_REQUEST, 'Insufficient funds');
+        }
 
-    await userData.save();
-    await recipientData.save();
-    await admin.save();
+        // Perform balance update
+        userData.balance -= amount + transferFee;
+        recipientData.balance += amount;
+        admin.balance += transferFee;
 
-    const newTransaction = (
-        await (await Transaction.create({
+        // Save user and recipient balances concurrently
+        await Promise.all([
+            userData.save({ session }),
+            recipientData.save({ session }),
+            admin.save({ session }),
+        ]);
+
+        // Create the transaction
+        const createdTransaction = await Transaction.create([{
             ...transaction,
-            recipient: recipientData._id, 
-        })).populate('user')
-      ).populate('recipient');
-      return newTransaction;
-    };
+            recipient: recipientData._id,
+        }], { session });
+
+        // Populate the user and recipient in the newly created transaction
+        const newTransaction = await createdTransaction[0].populate(['user', 'recipient'])
+
+        await session.commitTransaction(); 
+        return newTransaction; 
+    } catch (error) {
+        await session.abortTransaction(); 
+        throw error;
+    } finally {
+        session.endSession(); // End the session
+    }
+};
+
 
 
 
