@@ -15,6 +15,12 @@ const createTransactionValidation = z.object({
       .length(10, { message: "Phone number must be exactly 10 digits" })
       .regex(/^\d{10}$/, { message: "Phone number must contain only numbers" })
       .optional(), // Will make this required based on the type
+      
+      agentNumber: z
+      .string()
+      .length(10, { message: "Phone number must be exactly 10 digits" })
+      .regex(/^\d{10}$/, { message: "Phone number must contain only numbers" })
+      .optional(), // Will make this required based on the type
 
     recipient: z.string().optional().nullable(), // Nullable for flexibility
     agentId: z.string().optional().nullable(),   // Nullable for flexibility
@@ -22,7 +28,7 @@ const createTransactionValidation = z.object({
   .refine((data) => {
     // If transaction type is 'deposit' or 'withdraw', agentId is required
     if ( data.type === 'withdraw') {
-      return !!data.agentId;
+      return !!data.agentNumber;
     }
     return true;
   }, {

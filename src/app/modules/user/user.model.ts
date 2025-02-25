@@ -1,4 +1,4 @@
-import { Schema, model } from 'mongoose';
+import { Schema, model, Document } from 'mongoose';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import { TUser } from './user.interface';
@@ -40,10 +40,6 @@ const userSchema = new Schema<TUser>(
       default: 0,
       min: [0, "Balance cannot be negative"],
     },
-    totalMoney: {
-      type: Number,
-      
-    },
     isVerified: {
       type: Boolean,
       default: false,
@@ -54,6 +50,7 @@ const userSchema = new Schema<TUser>(
         values: Object.values(USER_ROLE),
         message: "Role must be either 'user', 'agent', or 'admin'",
       },
+      required: true,
     },
     isBlocked: {
       type: Boolean,
@@ -63,7 +60,25 @@ const userSchema = new Schema<TUser>(
   { timestamps: true }
 );
 
-import { Document } from "mongoose";
+// Add the "income" field **ONLY IF** the role is "agent"
+userSchema.add({
+  income: {
+    type: Number,
+    default: 0,
+    min: [0, "Income cannot be negative"],
+    required: function (this: TUser) {
+      return this.role === "agent";
+    },
+  },
+  totalMoney: {
+    type: Number,
+    default: 0,
+    min: [0, "totalMoney cannot be negative"],
+    required: function (this: TUser) {
+      return this.role === "admin"; 
+    },
+  }
+});
 
 userSchema.pre("save", async function (next) {
   const user = this as Document & TUser; // Mongoose document with TUser properties
@@ -81,7 +96,6 @@ userSchema.pre("save", async function (next) {
 
   next();
 });
-
 
 // Create the Mongoose model
 export const User = model<TUser>('User', userSchema);

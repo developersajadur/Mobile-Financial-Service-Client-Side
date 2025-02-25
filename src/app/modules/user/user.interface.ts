@@ -12,6 +12,7 @@ export type TUser = {
   isVerified: boolean;
   role: 'user' | 'agent' | 'admin';
   totalMoney?: number;
+  income?: number;
   isBlocked: boolean;
   createdAt?: Date;
   updatedAt?: Date;

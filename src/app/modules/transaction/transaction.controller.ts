@@ -36,7 +36,24 @@ const createTransferTransactionIntoDb = catchAsync(async (req, res) => {
   });
 });
 
+const createWithdrawTransactionIntoDb = catchAsync(async (req, res) => {
+  const decoded = tokenDecoder(req);
+  const { userId } = decoded;
+  req.body.user = userId;
+  const transaction = await transactionServices.createWithdrawTransactionIntoDb(
+    req.body,
+  );
+
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Withdraw Money successful',
+    data: transaction,
+  });
+});
+
 export const transactionController = {
     createDepositTransactionIntoDb,
     createTransferTransactionIntoDb,
+    createWithdrawTransactionIntoDb,
 };

@@ -30,6 +30,15 @@ const transactionSchema = new Schema<TTransaction>(
       maxlength: 10,
       match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
     },
+    agentNumber: {
+      type: String, // Changed to String to handle leading zeros
+      required: function () {
+        return this.type === 'withdraw'; // Only required for withdraw
+      },
+      minlength: 10,
+      maxlength: 10,
+      match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
+    },
 
     recipient: {
       type: Schema.Types.ObjectId,

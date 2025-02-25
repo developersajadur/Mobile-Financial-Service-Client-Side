@@ -21,4 +21,11 @@ router.post(
   transactionController.createTransferTransactionIntoDb,
 );
 
+router.post(
+  '/make-withdraw-transaction',
+  auth(USER_ROLE.user),
+  validateRequest(transactionValidationSchema.createTransactionValidation),
+  transactionController.createWithdrawTransactionIntoDb,
+);
+
 export const transactionRoute = router;
