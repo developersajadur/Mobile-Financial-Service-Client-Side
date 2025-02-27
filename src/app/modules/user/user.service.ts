@@ -32,7 +32,10 @@ const createUserIntoDb = async (user: TUser) => {
 };
 
 const getAllUsers = async (query: Record<string, unknown>) => {
-  const userQuery = new QueryBuilder(User.find(), query)
+  const userQuery = new QueryBuilder(
+    User.find({ role: { $in: ["agent", "user"] } }),
+    query
+  )
     .search(userSearchableFields)
     .filter()
     .sort()
@@ -45,7 +48,60 @@ const getAllUsers = async (query: Record<string, unknown>) => {
 };
 
 
+const getUserById = async (id: string) => {
+  const user = await User.findById(id);
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, 'User Not Found');
+  }
+  if(user.isBlocked){
+    throw new AppError(status.FORBIDDEN, 'User is blocked');
+  }
+  return user;
+}
+
+
+const getUsersCount = async () => {
+  const totalUsers = await User.countDocuments();
+  return { totalUsers };
+};
+
+const updateUserStatus = async (userId: string, isBlocked: boolean) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, 'User Not Found');
+  }
+  user.isBlocked = isBlocked;
+  await user.save();
+  return user;
+}
+
+const getApprovalRequestAgent = async() => {
+  return await User.find({ role: "agent", isVerified: false });
+}
+
+const approveUser = async (userId: string) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new AppError(status.NOT_FOUND, "User not found!");
+  }
+
+  if (user.isVerified) {
+    throw new AppError(status.BAD_REQUEST, "User is already approved!");
+  }
+
+  user.isVerified = true;
+  await user.save();
+
+  return user;
+};
+
 export const userService = {
   createUserIntoDb,
   getAllUsers,
+  getUsersCount,
+  getUserById,
+  updateUserStatus,
+  getApprovalRequestAgent,
+  approveUser
 };

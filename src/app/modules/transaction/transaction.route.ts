@@ -28,4 +28,28 @@ router.post(
   transactionController.createWithdrawTransactionIntoDb,
 );
 
+router.get(
+  '/count',
+  auth(USER_ROLE.admin),
+  transactionController.getTransactionCount,
+);
+
+router.get(
+  '/my-transactions',
+  auth(USER_ROLE.user, USER_ROLE.agent),
+  transactionController.getMyTransactions,
+);
+
+router.get(
+  '/users/:id',
+  auth(USER_ROLE.admin),
+  transactionController.getTransactionsDetailsById,
+);
+
+router.get(
+  '/',
+  auth(USER_ROLE.admin),
+  transactionController.getAllTransactionsFromDb,
+);
+
 export const transactionRoute = router;

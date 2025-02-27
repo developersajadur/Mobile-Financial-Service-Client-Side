@@ -3,6 +3,7 @@ import { z } from 'zod';
 const createTransactionValidation = z.object({
   body: z.object({
     user: z.string().min(1, { message: "User ID is required" }).optional(),
+    transactionId: z.string().min(1, { message: "transactionId is required" }).optional(),
     
     type: z.enum(['deposit', 'withdraw', 'transfer'], {
       message: "Transaction type must be 'deposit', 'withdraw', or 'transfer'",

@@ -8,6 +8,9 @@ const transactionSchema = new Schema<TTransaction>(
       ref: 'User',
       required: true,
     },
+    transactionId: {
+      type: String,
+    },
 
     type: {
       type: String,

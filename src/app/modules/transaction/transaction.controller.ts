@@ -39,7 +39,7 @@ const createTransferTransactionIntoDb = catchAsync(async (req, res) => {
 const createWithdrawTransactionIntoDb = catchAsync(async (req, res) => {
   const decoded = tokenDecoder(req);
   const { userId } = decoded;
-  req.body.user = userId;
+  req.body.user = userId; 
   const transaction = await transactionServices.createWithdrawTransactionIntoDb(
     req.body,
   );
@@ -52,8 +52,56 @@ const createWithdrawTransactionIntoDb = catchAsync(async (req, res) => {
   });
 });
 
+const getTransactionCount = catchAsync(async (req, res) => {
+  const transactions = await transactionServices.getTransactionCount();
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Transaction length retrieved successfully',
+    data: transactions,
+  });
+});
+
+const getAllTransactionsFromDb = catchAsync(async (req, res) => {
+  const transactions = await transactionServices.getAllTransactionsFromDb();
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Transaction retrieved successfully',
+    data: transactions,
+  });
+});
+
+
+const getMyTransactions = catchAsync(async (req, res) => {
+  const decoded = tokenDecoder(req);
+  const { userId } = decoded;
+  const transactions = await transactionServices.getMyTransactions(userId);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Transaction retrieved successfully',
+    data: transactions,
+  });
+});
+
+const getTransactionsDetailsById = catchAsync(async (req, res) => {
+  const {id} = req.params;
+  const transactions = await transactionServices.getTransactionsDetailsById(id);
+  sendResponse(res, {
+    statusCode: status.OK,
+    success: true,
+    message: 'Transaction retrieved successfully',
+    data: transactions,
+  });
+});
+
 export const transactionController = {
     createDepositTransactionIntoDb,
     createTransferTransactionIntoDb,
     createWithdrawTransactionIntoDb,
+    getTransactionCount,
+    getMyTransactions,
+    getAllTransactionsFromDb,
+    getTransactionsDetailsById
 };

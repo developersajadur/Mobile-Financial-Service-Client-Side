@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { FilterQuery, Query } from 'mongoose';
+import { FilterQuery, Query } from "mongoose";
 
 class QueryBuilder<T> {
   public modelQuery: Query<T[], T>;
@@ -11,26 +11,33 @@ class QueryBuilder<T> {
   }
 
   search(searchableFields: string[]) {
-    const search = this?.query?.search;
+    let search = this?.query?.search;
+
     if (search) {
-      this.modelQuery = this.modelQuery.find({
-        $or: searchableFields.map(
-          (field) =>
-            ({
-              [field]: { $regex: search, $options: 'i' },
-            }) as FilterQuery<T>,
-        ),
-      });
+      if (!isNaN(Number(search))) {
+        // Convert search to number if it's numeric
+        search = Number(search);
+        this.modelQuery = this.modelQuery.find({
+          $or: searchableFields.map((field) => ({
+            [field]: search, // Direct match for numeric fields
+          })),
+        });
+      } else {
+        // If search is a string, use regex
+        this.modelQuery = this.modelQuery.find({
+          $or: searchableFields.map((field) => ({
+            [field]: { $regex: search, $options: "i" },
+          })),
+        });
+      }
     }
 
     return this;
   }
 
   filter() {
-    const queryObj = { ...this.query }; // copy
-
-    // Filtering
-    const excludeFields = ['search', 'sort', 'limit', 'page', 'fields'];
+    const queryObj = { ...this.query }; // Copy query object
+    const excludeFields = ["search", "sort", "limit", "page", "fields"];
     excludeFields.forEach((el) => delete queryObj[el]);
 
     // Handle minPrice and maxPrice filtering
@@ -38,31 +45,28 @@ class QueryBuilder<T> {
       const priceQuery: Record<string, any> = {};
 
       if (queryObj.minPrice) {
-        priceQuery['$gte'] = queryObj.minPrice; // minPrice filter
+        priceQuery["$gte"] = Number(queryObj.minPrice); // Convert to number
         delete queryObj.minPrice;
       }
 
       if (queryObj.maxPrice) {
-        priceQuery['$lte'] = queryObj.maxPrice; // maxPrice filter
+        priceQuery["$lte"] = Number(queryObj.maxPrice); // Convert to number
         delete queryObj.maxPrice;
       }
 
-      // If price filter exists, add to the query
       if (Object.keys(priceQuery).length > 0) {
-        queryObj['price'] = priceQuery;
+        queryObj["price"] = priceQuery;
       }
     }
 
     this.modelQuery = this.modelQuery.find(queryObj as FilterQuery<T>);
-
     return this;
   }
 
   sort() {
     const sort =
-      (this?.query?.sort as string)?.split(',')?.join(' ') || '-createdAt';
+      (this?.query?.sort as string)?.split(",")?.join(" ") || "-createdAt";
     this.modelQuery = this.modelQuery.sort(sort as string);
-
     return this;
   }
 
@@ -72,20 +76,22 @@ class QueryBuilder<T> {
     const skip = (page - 1) * limit;
 
     this.modelQuery = this.modelQuery.skip(skip).limit(limit);
-
     return this;
   }
 
   fields() {
     const fields =
-      (this?.query?.fields as string)?.split(',')?.join(' ') || '-__v';
+      (this?.query?.fields as string)?.split(",")?.join(" ") || "-__v";
 
     this.modelQuery = this.modelQuery.select(fields);
     return this;
   }
+
   async countTotal() {
-    const totalQueries = this.modelQuery.getFilter();
-    const total = await this.modelQuery.model.countDocuments(totalQueries);
+    // Create a separate query without pagination
+    const totalQuery = this.modelQuery.model.find(this.modelQuery.getQuery());
+
+    const total = await totalQuery.countDocuments();
     const page = Number(this?.query?.page) || 1;
     const limit = Number(this?.query?.limit) || 10;
     const totalPage = Math.ceil(total / limit);
