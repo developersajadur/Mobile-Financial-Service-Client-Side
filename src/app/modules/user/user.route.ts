@@ -13,10 +13,27 @@ router.post(
   userController.createUserIntoDb,
 );
 router.get('/', auth(USER_ROLE.admin), userController.getAllUsers);
+
 router.get('/count', auth(USER_ROLE.admin), userController.getUsersCount);
-router.get('/approval-request', auth(USER_ROLE.admin), userController.getApprovalRequestAgent);
-router.patch('/:id/status', auth(USER_ROLE.admin), userController.updateUserStatus);
-router.patch("/:id/approve", auth(USER_ROLE.admin), userController.approveUser);
-router.get('/:id', auth(USER_ROLE.admin, USER_ROLE.agent, USER_ROLE.user), userController.getUserById);
+
+router.get(
+  '/approval-request',
+  auth(USER_ROLE.admin),
+  userController.getApprovalRequestAgent,
+);
+
+router.patch(
+  '/:id/status',
+  auth(USER_ROLE.admin),
+  userController.updateUserStatus,
+);
+
+router.patch('/:id/approve', auth(USER_ROLE.admin), userController.approveUser);
+
+router.get(
+  '/:id',
+  auth(USER_ROLE.admin, USER_ROLE.agent, USER_ROLE.user),
+  userController.getUserById,
+);
 
 export const userRoute = router;

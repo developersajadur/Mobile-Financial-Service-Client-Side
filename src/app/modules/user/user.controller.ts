@@ -52,7 +52,7 @@ const getUserById = catchAsync(async (req, res) => {
     message: 'User retrieved successfully',
     data: user,
   });
-})
+});
 
 const getApprovalRequestAgent = catchAsync(async (req, res) => {
   const agent = await userService.getApprovalRequestAgent();
@@ -62,8 +62,7 @@ const getApprovalRequestAgent = catchAsync(async (req, res) => {
     message: 'Agents retrieved successfully',
     data: agent,
   });
-})
-
+});
 
 const updateUserStatus = catchAsync(async (req, res) => {
   const userId = req.params.id as string;
@@ -85,7 +84,7 @@ const approveUser = catchAsync(async (req, res) => {
   sendResponse(res, {
     statusCode: status.OK,
     success: true,
-    message: "User approved successfully!",
+    message: 'User approved successfully!',
     data: approvedUser,
   });
 });
@@ -97,5 +96,5 @@ export const userController = {
   getUserById,
   updateUserStatus,
   getApprovalRequestAgent,
-  approveUser
+  approveUser,
 };

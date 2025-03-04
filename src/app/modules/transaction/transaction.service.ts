@@ -9,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const createDepositTransactionIntoDb = async (transaction: TDeposit) => {
   const { type, amount, recipientNumber, user, password } = transaction;
-  
+
   const session = await mongoose.startSession(); // Start a session for transactions
   session.startTransaction(); // Start the transaction
 
@@ -66,7 +66,7 @@ const createDepositTransactionIntoDb = async (transaction: TDeposit) => {
         {
           ...transaction,
           recipient: recipientData._id,
-          transactionId:  `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
+          transactionId: `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
         },
       ],
       { session },
@@ -113,7 +113,9 @@ const createTransferTransactionIntoDb = async (transaction: TTransfer) => {
     }
 
     // Find sender (user)
-    const userData = await User.findById(user).select('+password').session(session);
+    const userData = await User.findById(user)
+      .select('+password')
+      .session(session);
     if (!userData) {
       throw new AppError(status.NOT_FOUND, 'User not found');
     }
@@ -162,7 +164,7 @@ const createTransferTransactionIntoDb = async (transaction: TTransfer) => {
         {
           ...transaction,
           recipient: recipientData._id,
-          transactionId:  `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
+          transactionId: `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
         },
       ],
       { session },
@@ -203,13 +205,14 @@ const createWithdrawTransactionIntoDb = async (transaction: TWithdraw) => {
     }
 
     // Find sender (user)
-    const userData = await User.findById(user).select('+password').session(session);
+    const userData = await User.findById(user)
+      .select('+password')
+      .session(session);
     if (!userData) throw new AppError(status.NOT_FOUND, 'User not found');
     const passwordMatch = await bcrypt.compare(password, userData?.password);
     if (!passwordMatch) {
       throw new AppError(status.UNAUTHORIZED, 'Invalid password!');
     }
-
 
     // Find agent (recipient)
     const agentData = await User.findOne({ phoneNumber: agentNumber }).session(
@@ -261,7 +264,7 @@ const createWithdrawTransactionIntoDb = async (transaction: TWithdraw) => {
         {
           ...transaction,
           agentId: agentData._id,
-          transactionId:  `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
+          transactionId: `TNX-${uuidv4().replace(/-/g, '').slice(0, 12).toUpperCase()}`,
         },
       ],
       { session },
@@ -295,29 +298,35 @@ const getMyTransactions = async (id: string) => {
       { agentId: id }, // Transactions where this user is the agent
       { recipient: id }, // Transactions where this user is the recipient
     ],
-  }).sort({ createdAt: -1 }).limit(100).populate("user").populate("agentId").populate("recipient");
+  })
+    .sort({ createdAt: -1 })
+    .limit(100)
+    .populate('user')
+    .populate('agentId')
+    .populate('recipient');
 
   return transactions;
 };
 
 const getTransactionsDetailsById = async (id: string) => {
-
   const transactions = await Transaction.find({
-    $or: [
-      { user: id },
-      { agentId: id }, 
-      { recipient: id },
-    ],
-  }).populate("user").populate("agentId").populate("recipient");
+    $or: [{ user: id }, { agentId: id }, { recipient: id }],
+  })
+    .populate('user')
+    .populate('agentId')
+    .populate('recipient');
 
   return transactions;
 };
 
-const getAllTransactionsFromDb = async() => {
-  const transactions = await Transaction.find().sort({ createdAt: -1 }).populate("user").populate("agentId").populate("recipient");
+const getAllTransactionsFromDb = async () => {
+  const transactions = await Transaction.find()
+    .sort({ createdAt: -1 })
+    .populate('user')
+    .populate('agentId')
+    .populate('recipient');
   return transactions;
-}
-
+};
 
 export const transactionServices = {
   createDepositTransactionIntoDb,
@@ -326,5 +335,5 @@ export const transactionServices = {
   getTransactionCount,
   getMyTransactions,
   getAllTransactionsFromDb,
-  getTransactionsDetailsById
+  getTransactionsDetailsById,
 };

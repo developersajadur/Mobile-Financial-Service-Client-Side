@@ -6,17 +6,17 @@ export type TUser = {
   fullName: string;
   email: string;
   phoneNumber: number; // Store as number
-  nidNumber: number;   // Store as number
-  password: string;    // Store as string for secure hashing
+  nidNumber: number; // Store as number
+  password: string; // Store as string for secure hashing
   balance: number;
   isVerified: boolean;
   role: 'user' | 'agent' | 'admin';
   totalMoney?: number;
   income?: number;
   isBlocked: boolean;
+  deviceFingerprint: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 };
-
 
 export type TUserRole = keyof typeof USER_ROLE;

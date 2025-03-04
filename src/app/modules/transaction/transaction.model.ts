@@ -21,7 +21,7 @@ const transactionSchema = new Schema<TTransaction>(
     amount: {
       type: Number,
       required: true,
-      min: [1, "Amount must be greater than zero"],
+      min: [1, 'Amount must be greater than zero'],
     },
 
     recipientNumber: {
@@ -31,7 +31,7 @@ const transactionSchema = new Schema<TTransaction>(
       },
       minlength: 10,
       maxlength: 10,
-      match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
+      match: [/^\d{10}$/, 'Phone number must be exactly 10 digits'],
     },
     agentNumber: {
       type: String, // Changed to String to handle leading zeros
@@ -40,7 +40,7 @@ const transactionSchema = new Schema<TTransaction>(
       },
       minlength: 10,
       maxlength: 10,
-      match: [/^\d{10}$/, "Phone number must be exactly 10 digits"],
+      match: [/^\d{10}$/, 'Phone number must be exactly 10 digits'],
     },
 
     recipient: {
@@ -59,7 +59,10 @@ const transactionSchema = new Schema<TTransaction>(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export const Transaction = model<TTransaction>('Transaction', transactionSchema);
+export const Transaction = model<TTransaction>(
+  'Transaction',
+  transactionSchema,
+);

@@ -39,7 +39,7 @@ const createTransferTransactionIntoDb = catchAsync(async (req, res) => {
 const createWithdrawTransactionIntoDb = catchAsync(async (req, res) => {
   const decoded = tokenDecoder(req);
   const { userId } = decoded;
-  req.body.user = userId; 
+  req.body.user = userId;
   const transaction = await transactionServices.createWithdrawTransactionIntoDb(
     req.body,
   );
@@ -72,7 +72,6 @@ const getAllTransactionsFromDb = catchAsync(async (req, res) => {
   });
 });
 
-
 const getMyTransactions = catchAsync(async (req, res) => {
   const decoded = tokenDecoder(req);
   const { userId } = decoded;
@@ -86,7 +85,7 @@ const getMyTransactions = catchAsync(async (req, res) => {
 });
 
 const getTransactionsDetailsById = catchAsync(async (req, res) => {
-  const {id} = req.params;
+  const { id } = req.params;
   const transactions = await transactionServices.getTransactionsDetailsById(id);
   sendResponse(res, {
     statusCode: status.OK,
@@ -97,11 +96,11 @@ const getTransactionsDetailsById = catchAsync(async (req, res) => {
 });
 
 export const transactionController = {
-    createDepositTransactionIntoDb,
-    createTransferTransactionIntoDb,
-    createWithdrawTransactionIntoDb,
-    getTransactionCount,
-    getMyTransactions,
-    getAllTransactionsFromDb,
-    getTransactionsDetailsById
+  createDepositTransactionIntoDb,
+  createTransferTransactionIntoDb,
+  createWithdrawTransactionIntoDb,
+  getTransactionCount,
+  getMyTransactions,
+  getAllTransactionsFromDb,
+  getTransactionsDetailsById,
 };

@@ -14,12 +14,12 @@ const createUserIntoDb = async (user: TUser) => {
         status.BAD_REQUEST,
         'User with this phone number already exists',
       );
-    }else if (isUserExist.email === user.email) {
+    } else if (isUserExist.email === user.email) {
       throw new AppError(
         status.BAD_REQUEST,
         'User with this email already exists',
       );
-    }else if (isUserExist.nidNumber === user.nidNumber) {
+    } else if (isUserExist.nidNumber === user.nidNumber) {
       throw new AppError(
         status.BAD_REQUEST,
         'User with this NID number already exists',
@@ -27,14 +27,32 @@ const createUserIntoDb = async (user: TUser) => {
     }
   }
 
+  // Assign balance based on user role
+  if (user.role === 'agent') {
+    user.isVerified = false;
+    user.balance = 100000; // Agents get 100,000 BDT
+  } else if (user.role === 'user') {
+    user.isVerified = true;
+    user.balance = 40; // Users get 40 BDT
+  }
+
+  // Save user to DB
   const result = await User.create(user);
+
+  // Update Admin's total money
+  const admin = await User.findOne({ role: 'admin' });
+  if (admin) {
+    admin.totalMoney = (admin.totalMoney || 0) + user.balance;
+    await admin.save();
+  }
+
   return result;
 };
 
 const getAllUsers = async (query: Record<string, unknown>) => {
   const userQuery = new QueryBuilder(
-    User.find({ role: { $in: ["agent", "user"] } }),
-    query
+    User.find({ role: { $in: ['agent', 'user'] } }),
+    query,
   )
     .search(userSearchableFields)
     .filter()
@@ -47,18 +65,16 @@ const getAllUsers = async (query: Record<string, unknown>) => {
   return { result, meta };
 };
 
-
 const getUserById = async (id: string) => {
   const user = await User.findById(id);
   if (!user) {
     throw new AppError(status.NOT_FOUND, 'User Not Found');
   }
-  if(user.isBlocked){
+  if (user.isBlocked) {
     throw new AppError(status.FORBIDDEN, 'User is blocked');
   }
   return user;
-}
-
+};
 
 const getUsersCount = async () => {
   const totalUsers = await User.countDocuments();
@@ -73,21 +89,21 @@ const updateUserStatus = async (userId: string, isBlocked: boolean) => {
   user.isBlocked = isBlocked;
   await user.save();
   return user;
-}
+};
 
-const getApprovalRequestAgent = async() => {
-  return await User.find({ role: "agent", isVerified: false });
-}
+const getApprovalRequestAgent = async () => {
+  return await User.find({ role: 'agent', isVerified: false });
+};
 
 const approveUser = async (userId: string) => {
   const user = await User.findById(userId);
 
   if (!user) {
-    throw new AppError(status.NOT_FOUND, "User not found!");
+    throw new AppError(status.NOT_FOUND, 'User not found!');
   }
 
   if (user.isVerified) {
-    throw new AppError(status.BAD_REQUEST, "User is already approved!");
+    throw new AppError(status.BAD_REQUEST, 'User is already approved!');
   }
 
   user.isVerified = true;
@@ -103,5 +119,5 @@ export const userService = {
   getUserById,
   updateUserStatus,
   getApprovalRequestAgent,
-  approveUser
+  approveUser,
 };

@@ -1,4 +1,4 @@
-import { Types } from "mongoose";
+import { Types } from 'mongoose';
 
 export type TDeposit = {
   type: 'deposit';
@@ -17,7 +17,7 @@ export type TTransfer = {
 };
 
 export type TWithdraw = {
-  type: "withdraw";
+  type: 'withdraw';
   amount: number;
   agentNumber: string;
   user: Types.ObjectId;
